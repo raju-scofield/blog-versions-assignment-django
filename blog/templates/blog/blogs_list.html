@@ -1,0 +1,36 @@
+{% extends 'blog/blog_base.html' %}
+{% block body_block %}
+<h1>Blogs:</h1>
+<div id="blogs-div">
+
+</div>
+<script>
+    $.ajax({
+        type: "GET",
+        url: `{% url 'blog:get-blogs' %}`,
+        success: function (data) {
+            const blogsData = JSON.parse(data.response_data)
+            
+            let blogCard=''
+            for(let item of blogsData){
+                blogCard += `<div class="card" onclick="showBlogDetail(${item.blog_id})">
+                                <div class="card-body">
+                                    <h3>${item.title}</h3><span>${item.author__username}</span>
+                                    <p>${item.description}</p>
+                                </div>
+                            </div>`
+            }
+            $('#blogs-div').empty()
+            $('#blogs-div').append(blogCard)
+            }
+        , error: function (data) {
+            //(data)
+            console.log(data)
+        }
+    })
+
+    function showBlogDetail(blog_id){
+        window.location.href=`blog/${blog_id}`
+    }
+</script>
+{% endblock %}

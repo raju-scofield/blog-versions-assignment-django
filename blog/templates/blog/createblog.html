@@ -1,0 +1,48 @@
+{% extends 'blog/blog_base.html' %}
+{% block body_block %}
+<h1>Create Blog</h1>
+<form id="create-blog-form" class="d-flex flex-column align-items-start">
+    {%csrf_token%}
+    <input id="blog-title" type="text" placeholder="Blog Title" />
+    <input id="blog-desc" type="text" placeholder="Description" />
+    <textarea id="blog-body" rows="5" cols="50"></textarea>
+    <button type="submit">Save</button>
+</form>
+<script>
+    var csrf_token = "{{ csrf_token }}"
+    const createblogForm = document.getElementById('create-blog-form');
+
+    createblogForm.addEventListener('submit',(e)=>{
+        e.preventDefault()
+        
+        const title = document.getElementById('blog-title')
+        const description = document.getElementById('blog-desc')
+        const body = document.getElementById('blog-body')
+
+        const blogData = {
+            "title": title.value,
+            "description": description.value,
+            "body_text": body.value
+        }
+        console.log(blogData)
+
+        $.ajax({
+        type: "POST",
+        url: `{% url 'blog:get-blogs' %}`,
+        headers: {
+        'X-CSRFToken': csrf_token
+        },
+        data:blogData,
+        success: function (data) {
+            console.log(data)
+            window.location.href = '/'
+            }
+        , error: function (data) {
+            //(data)
+            console.log(data)
+        }
+    })
+
+    })
+</script>
+{% endblock %}

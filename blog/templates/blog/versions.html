@@ -1,0 +1,51 @@
+{%extends 'blog/blog_base.html'%}
+{%block body_block%}
+<h3>Previous Versions:</h3>
+{%if blog_versions%}
+{%for blog_version in blog_versions%}
+<div class="card">
+    <div class="card-body">
+        <h5>Version: {{blog_version.version}} <span>{{blog_version.modified_date}}</span></h5>
+        <h4>{{blog_version.title}}</h4>
+        <p>{{blog_version.description}}</p>
+        <p>{{blog_version.body_text}}</p>
+        <button onclick="revert('{{blog_version.blog_version_id}}')">Revert</button>
+        </div>
+</div>
+{%endfor%}
+{%else%}
+<h3>There are no versions available for this post</h3>
+{%endif%}
+<script>
+    var blog_versions_list = {{blog_versions|safe}}
+    console.log(blog_versions_list)
+
+   function revert(blog_version_id){
+    const obj = blog_versions_list.filter(eachItem=>eachItem.blog_version_id==blog_version_id)
+
+    const blogData = {
+        "title":obj[0].title,
+        "description":obj[0].description,
+        "body_text":obj[0].body_text
+    }
+
+    $.ajax({
+        type: "PUT",
+        url: `{% url 'blog:get-blog-detail-view' blog_id %}`,
+        headers: {
+        'X-CSRFToken': '{{csrf_token}}'
+        },
+        data:blogData,
+        success: function (data) {
+            window.location.href = '/blog/{{blog_id}}/'
+            }
+        , error: function (data) {
+            //(data)
+            console.log(data)
+        }
+    })
+
+    console.log(obj)
+   }
+</script>
+{%endblock%}

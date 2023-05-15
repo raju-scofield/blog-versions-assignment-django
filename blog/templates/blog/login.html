@@ -1,0 +1,11 @@
+{%extends 'blog/blog_base.html'%}
+{%load static%}
+{%block body_block%}
+<h1>Log In</h1>
+<form id="login-form" class="d-flex flex-column align-items-start">
+    <input id="login-username" type="text" placeholder="username"/>
+    <input id="login-password" type="password" placeholder="password"/>
+    <button type="submit">Log In</button>
+</form>
+<script type="text/javascript" src="{% static 'js/login.js' %}"></script>
+{%endblock%}

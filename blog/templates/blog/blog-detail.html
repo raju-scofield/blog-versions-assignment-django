@@ -1,0 +1,121 @@
+{% extends 'blog/blog_base.html' %}
+{% block body_block %}
+<h5>Blogs Details:</h5>
+
+<div id="blog-details-div" class="card">
+
+</div>
+{%if check_author_user_same %}
+<button class="btn btn-warning m-2" onclick="editBlog('{{blog_id}}')">Edit Blog</button>
+<button class="btn btn-danger m-2" onclick="deleteBlog('{{blog_id}}')">Delete Blog</button>
+{% endif %}
+<hr>
+<form id="commenting">
+<input id="comment-input" type="text" placeholder="Enter your comment here" />
+<button class="btn btn-primary" type="submit">Post Comment</button>
+</form>
+<h3>Comments:</h3>
+<div id="comments-div">
+
+</div>
+
+<script>
+    $.ajax({
+        type: "GET",
+        url: `{% url 'blog:get-blog-detail-view' blog_id %}`,
+        success: function (data) {
+            const blogsData = JSON.parse(data.response_data)
+            const blogDetail = `
+            <div class="card-body">
+                <h1>${blogsData.title}</h1>
+                <h5>Posted by: ${blogsData.author__username}</h5>
+                <p>${blogsData.description}</p>
+                <p>${blogsData.body_text}</p>
+            </div>
+            `
+            $('#blog-details-div').empty()
+            $('#blog-details-div').append(blogDetail)
+            }
+        , error: function (data) {
+            //(data)
+            console.log(data)
+        }
+    })
+
+    $.ajax({
+        type: "GET",
+        url: `{% url 'blog:get-comments' blog_id %}`,
+        success: function (data) {
+            const CommentsData = JSON.parse(data.response_data)
+            console.log(CommentsData)
+            let comments = ''
+            for(comment of CommentsData){
+             comments += `
+            <div class="card">
+                <h5>${comment.author__username}</h5>
+                <p>${comment.comment_text}</p>
+            </div>
+            `
+            }
+
+            $('#comments-div').empty()
+            $('#comments-div').append(comments)
+            }
+        , error: function (data) {
+            //(data)
+            console.log(data)
+        }
+    })
+
+    const commentForm = document.getElementById("commenting")
+    commentForm.addEventListener('submit',(e)=>{
+        e.preventDefault()
+
+        const commentInputEl = document.getElementById("comment-input")
+
+        const commentData = {
+            "comment_text": commentInputEl.value,
+        }
+
+        $.ajax({
+        type: "POST",
+        url: `{% url 'blog:get-comments' blog_id%}`,
+        headers: {
+        'X-CSRFToken': '{{csrf_token}}'
+        },
+        data:commentData,
+        success: function (data) {
+            console.log(data)
+            window.location.href = '/blog/{{blog_id}}/'
+            }
+        , error: function (data) {
+            //(data)
+            console.log(data)
+        }
+    })
+    })
+
+   
+
+
+    function editBlog(blog_id){
+        window.location.href = `/edit_blog/${blog_id}`
+    }
+    function deleteBlog(blog_id){
+        $.ajax({
+        type: "DELETE",
+        url: `{% url 'blog:get-blog-detail-view' blog_id %}`,
+        headers: {
+            'X-CSRFToken': "{{csrf_token}}"
+        },
+        success: function (data) {
+            window.location.href=`/`
+        }
+        , error: function (data) {
+            //(data)
+            console.log(data)
+        }
+    })
+    }
+</script>
+{% endblock %}
