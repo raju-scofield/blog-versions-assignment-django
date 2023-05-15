@@ -6,7 +6,6 @@ from django.views.generic import View
 from blog.models import BlogPost,BlogVersions,Comment
 from django.contrib.auth.models import User
 
-from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.permissions import IsAuthenticated
 
@@ -14,10 +13,8 @@ import json
 from datetime import datetime
 
 
-# Create your views here.
-
 #Blogs List API
-class GetBlogsAPI(generics.GenericAPIView, LoginRequiredMixin):
+class GetBlogsAPI(generics.GenericAPIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -72,7 +69,7 @@ class GetBlogsAPI(generics.GenericAPIView, LoginRequiredMixin):
                 content_type='application/json')
 
 #Blog Details API
-class GetBlogDetailsAPI(generics.GenericAPIView, LoginRequiredMixin):
+class GetBlogDetailsAPI(generics.GenericAPIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -140,7 +137,7 @@ class GetBlogDetailsAPI(generics.GenericAPIView, LoginRequiredMixin):
             )
 
 #Comments List API
-class GetCommentsForBlogAPI(generics.GenericAPIView, LoginRequiredMixin):
+class GetCommentsForBlogAPI(generics.GenericAPIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -171,32 +168,34 @@ class GetCommentsForBlogAPI(generics.GenericAPIView, LoginRequiredMixin):
         )
 
 #Blogs List View
-class Index(View,LoginRequiredMixin):
+class Index(View):
     def get(self,request):
         print(request.user.id)
         return render(request,"blog/blogs_list.html")
 
 #Blog Details View
-class BlogDetailView(View, LoginRequiredMixin):
+class BlogDetailView(View):
     def get(self,request, blog_id):
         author = BlogPost.objects.get(blog_id=blog_id).author
         check_author_user_same = author==request.user
         return render(request,"blog/blog-detail.html", context={"blog_id":blog_id, "check_author_user_same":check_author_user_same})
 
 #Add Blog View
-class AddBlog(View, LoginRequiredMixin):
+class AddBlog(View):
         def get(self,request):
             return render(request,"blog/createblog.html")
 
 #Edit Blog View    
-class EditBlog(View, LoginRequiredMixin):
+class EditBlog(View):
         def get(self,request,blog_id):
             return render(request,"blog/blog_edit.html", context={"blog_id":blog_id})
 
 #Blog Versions View
-class BlogVersionsView(View, LoginRequiredMixin):
+class BlogVersionsView(View):
     def get(self, request, blog_id):
         blog_versions = list(BlogVersions.objects.filter(blog_id=blog_id).order_by('-version').values())
+
+        #To Convert DateTime 
         my_list_str = [
         {'blog_version_id': item["blog_version_id"], 'blog_id_id': item["blog_id_id"], 'version': item["version"], 'title': item["title"], 'description': item["description"], 'body_text': item["body_text"], 'modified_date': item["modified_date"].isoformat()}
         for item in blog_versions]

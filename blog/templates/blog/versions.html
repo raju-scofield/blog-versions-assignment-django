@@ -18,7 +18,6 @@
 {%endif%}
 <script>
     var blog_versions_list = {{blog_versions|safe}}
-    console.log(blog_versions_list)
 
    function revert(blog_version_id){
     const obj = blog_versions_list.filter(eachItem=>eachItem.blog_version_id==blog_version_id)
