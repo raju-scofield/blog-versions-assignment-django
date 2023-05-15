@@ -2,48 +2,27 @@ from django.shortcuts import render
 from rest_framework import status, generics
 from rest_framework.response import Response
 from django.views.generic import View
+
 from blog.models import BlogPost,BlogVersions,Comment
 from django.contrib.auth.models import User
-import json
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.permissions import IsAuthenticated
+
+import json
 from datetime import datetime
 
 
 # Create your views here.
 
-class Index(View,LoginRequiredMixin):
-    def get(self,request):
-        print(request.user.id)
-        return render(request,"blog/blogs_list.html")
-
-
-class BlogDetailView(View, LoginRequiredMixin):
-    def get(self,request, blog_id):
-        author = BlogPost.objects.get(blog_id=blog_id).author
-        check_author_user_same = author==request.user
-        return render(request,"blog/blog-detail.html", context={"blog_id":blog_id, "check_author_user_same":check_author_user_same})
-
-class RegisterPageView(View):
-    def get(self,request):
-
-        return render(request,"blog/register.html")
-
-class LoginPageView(View):
-    def get(self,request):
-
-        return render(request,"blog/login.html")
-
-
+#Blogs List API
 class GetBlogsAPI(generics.GenericAPIView, LoginRequiredMixin):
     authentication_classes = [SessionAuthentication, BasicAuthentication]
     permission_classes = [IsAuthenticated]
-    login_url = 'login/'
-    redirect_field_name = 'redirect_to'
+
+    #GET Blogs API
     def get(self,request):
-        
-        #when user doesnt give blog id
         try:
             blog_posts = list(BlogPost.objects.select_related('author').all().values('title', 'description', 'author__username', 'blog_id'))
             response_data = json.dumps(blog_posts)
@@ -59,11 +38,11 @@ class GetBlogsAPI(generics.GenericAPIView, LoginRequiredMixin):
                     data={'Error': f"{e}"},
                     content_type='application/json'
                 )
+        
+    #POST Blog API
     def post(self, request):
         post_data = request.POST
         if post_data:
-           print(request.user.id)
-           print(request.user)
            author = User.objects.get(id=request.user.id)
            title = post_data.get("title", None)
            description = post_data.get("description", None)
@@ -92,10 +71,12 @@ class GetBlogsAPI(generics.GenericAPIView, LoginRequiredMixin):
                 data={"Error:": "post data not provided"},
                 content_type='application/json')
 
+#Blog Details API
 class GetBlogDetailsAPI(generics.GenericAPIView, LoginRequiredMixin):
     authentication_classes = [SessionAuthentication, BasicAuthentication]
     permission_classes = [IsAuthenticated]
 
+    #Get Blog Details API
     def get(self, request, blog_id):
         blog_posts = list(BlogPost.objects.select_related('author').filter(blog_id=blog_id).values('title', 'description', 'author__username', 'blog_id', 'body_text'))[0]
         response_data = json.dumps(blog_posts)
@@ -106,6 +87,7 @@ class GetBlogDetailsAPI(generics.GenericAPIView, LoginRequiredMixin):
             content_type='application/json'
         )
     
+    #Edit Blog Details API
     def put(self, request, blog_id):
 
         post_data = request.POST
@@ -132,6 +114,7 @@ class GetBlogDetailsAPI(generics.GenericAPIView, LoginRequiredMixin):
            blog_version_obj = BlogVersions(title=previous_title, description=previous_description, body_text=previous_body_text, version = present_version_no, blog_id=blog_obj)
            blog_version_obj.save()
 
+           #Editing the Blog
 
            blog_obj.updated_date = datetime.now()
            blog_obj.title = title
@@ -144,6 +127,8 @@ class GetBlogDetailsAPI(generics.GenericAPIView, LoginRequiredMixin):
             data={'response_data': "updated succesfully"},
             content_type='application/json'
         )
+    
+    #DELETE Blog API
     def delete(self, request, blog_id):
             blog_obj = BlogPost.objects.get(blog_id=blog_id)
             blog_obj.delete()
@@ -153,11 +138,13 @@ class GetBlogDetailsAPI(generics.GenericAPIView, LoginRequiredMixin):
             data={'response_data': "Deleted succesfully"},
             content_type='application/json'
             )
-    
+
+#Comments List API
 class GetCommentsForBlogAPI(generics.GenericAPIView, LoginRequiredMixin):
     authentication_classes = [SessionAuthentication, BasicAuthentication]
     permission_classes = [IsAuthenticated]
 
+    #Get comments list API
     def get(self, request, blog_id):
         comments = list(Comment.objects.select_related('author').filter(post_id=blog_id).order_by('-creation_date').values('author__username','comment_text'))
         response_data = json.dumps(comments)
@@ -168,6 +155,7 @@ class GetCommentsForBlogAPI(generics.GenericAPIView, LoginRequiredMixin):
             content_type='application/json'
         )
     
+    #Create a Comment API
     def post(self, request, blog_id):
         post_data = request.POST
         if post_data:
@@ -182,16 +170,30 @@ class GetCommentsForBlogAPI(generics.GenericAPIView, LoginRequiredMixin):
             content_type='application/json'
         )
 
+#Blogs List View
+class Index(View,LoginRequiredMixin):
+    def get(self,request):
+        print(request.user.id)
+        return render(request,"blog/blogs_list.html")
 
+#Blog Details View
+class BlogDetailView(View, LoginRequiredMixin):
+    def get(self,request, blog_id):
+        author = BlogPost.objects.get(blog_id=blog_id).author
+        check_author_user_same = author==request.user
+        return render(request,"blog/blog-detail.html", context={"blog_id":blog_id, "check_author_user_same":check_author_user_same})
 
+#Add Blog View
 class AddBlog(View, LoginRequiredMixin):
         def get(self,request):
             return render(request,"blog/createblog.html")
-        
+
+#Edit Blog View    
 class EditBlog(View, LoginRequiredMixin):
         def get(self,request,blog_id):
             return render(request,"blog/blog_edit.html", context={"blog_id":blog_id})
 
+#Blog Versions View
 class BlogVersionsView(View, LoginRequiredMixin):
     def get(self, request, blog_id):
         blog_versions = list(BlogVersions.objects.filter(blog_id=blog_id).order_by('-version').values())
@@ -199,3 +201,15 @@ class BlogVersionsView(View, LoginRequiredMixin):
         {'blog_version_id': item["blog_version_id"], 'blog_id_id': item["blog_id_id"], 'version': item["version"], 'title': item["title"], 'description': item["description"], 'body_text': item["body_text"], 'modified_date': item["modified_date"].isoformat()}
         for item in blog_versions]
         return render(request, "blog/versions.html",context={"blog_id":blog_id, "blog_versions":my_list_str})
+    
+#Register New User View
+class RegisterPageView(View):
+    def get(self,request):
+
+        return render(request,"blog/register.html")
+
+#Login User View
+class LoginPageView(View):
+    def get(self,request):
+
+        return render(request,"blog/login.html")
